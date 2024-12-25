@@ -3,6 +3,8 @@ package com.dragonguard.open_api.gitrepomember
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.support.GeneratedKeyHolder
 import org.springframework.stereotype.Repository
+import java.sql.Timestamp
+import java.time.Instant
 import javax.sql.DataSource
 
 @Repository
@@ -12,55 +14,59 @@ class GitRepoMemberRepository(
     private val jdbcTemplate = JdbcTemplate(dataSource)
 
     fun saveAll(gitRepoMembers: List<GitRepoMember>): List<Long> {
-        gitRepoMembers.forEach { ensureMemberExists(it.member) }
+        val updatedGitRepoMembers = gitRepoMembers.map {
+            val id = ensureMemberExists(it.member)
+            it.member.id = id
+            it
+        }
 
-        return gitRepoMembers.map { gitRepoMember ->
-            val existsSql = "SELECT id FROM git_repo_member WHERE git_repo_id = ? AND member_id = ?"
+        return updatedGitRepoMembers.map { gitRepoMember ->
+            val upsertSql = """
+            INSERT INTO git_repo_member 
+            (git_repo_id, member_id, commits, additions, deletions, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (git_repo_id, member_id) 
+            DO UPDATE SET 
+                commits = EXCLUDED.commits,
+                additions = EXCLUDED.additions,
+                deletions = EXCLUDED.deletions,
+        """.trimIndent()
 
-            val existingId = runCatching {
-                jdbcTemplate.queryForObject(
-                    existsSql,
-                    { rs, _ -> rs.getLong("id") },
-                    arrayOf(gitRepoMember.gitRepoId, gitRepoMember.member.githubId)
-                )
-            }.getOrNull()
+            val keyHolder = GeneratedKeyHolder()
 
-            existingId ?: run {
-                val insertSql = """
-                    INSERT INTO git_repo_member 
-                    (git_repo_id, member_id, commits, additions, deletions) 
-                    VALUES (?, ?, ?, ?, ?)
-                """.trimIndent()
+            jdbcTemplate.update({ connection ->
+                connection.prepareStatement(upsertSql, arrayOf("id")).apply {
+                    setLong(1, gitRepoMember.gitRepoId)
+                    setLong(2, gitRepoMember.member.id!!)
+                    setInt(3, gitRepoMember.commits)
+                    setInt(4, gitRepoMember.additions)
+                    setInt(5, gitRepoMember.deletions)
+                    setTimestamp(6, Timestamp.from(Instant.now()))
+                }
+            }, keyHolder)
 
-                val keyHolder = GeneratedKeyHolder()
-
-                jdbcTemplate.update({ connection ->
-                    connection.prepareStatement(insertSql, arrayOf("id")).apply {
-                        setLong(1, gitRepoMember.gitRepoId)
-                        setString(2, gitRepoMember.member.githubId)
-                        setInt(3, gitRepoMember.commits)
-                        setInt(4, gitRepoMember.additions)
-                        setInt(5, gitRepoMember.deletions)
-                    }
-                }, keyHolder)
-
-                keyHolder.key?.toLong() ?: throw IllegalStateException("GitRepoMember 생성 실패")
-            }
+            keyHolder.key?.toLong() ?: throw IllegalStateException("GitRepoMember 생성 실패")
         }
     }
 
-    private fun ensureMemberExists(member: Member) {
-        val existsSql = "SELECT COUNT(id) FROM member WHERE github_id = ?"
-        val count = jdbcTemplate.queryForObject(existsSql, Int::class.java, arrayOf(member.githubId)) ?: 0
+    private fun ensureMemberExists(member: Member): Long {
+        val existsSql = "SELECT id FROM member WHERE github_id = ?"
+        val memberId: Long? = jdbcTemplate.queryForObject(existsSql, Long::class.java, member.githubId)
 
-        if (count == 0) {
+        return if (memberId != null) {
+            memberId
+        } else {
             jdbcTemplate.update(
-                "INSERT INTO member (github_id, profile_image, auth_step, tier) VALUES (?, ?, ?, ?)",
+                "INSERT INTO member (github_id, profile_image, auth_step, tier, created_at) VALUES (?, ?, ?, ?, ?)",
                 member.githubId,
                 member.profileImage,
                 member.authStep,
-                member.tier
+                member.tier,
+                Timestamp.from(Instant.now())
             )
+
+            jdbcTemplate.queryForObject(existsSql, Long::class.java, member.githubId)
+                ?: throw IllegalStateException("Member id 조회 실패")
         }
     }
 }

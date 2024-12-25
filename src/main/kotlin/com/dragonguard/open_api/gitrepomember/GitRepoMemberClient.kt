@@ -26,8 +26,8 @@ class GitRepoMemberClient(
 
     @Retryable(
         value = [Exception::class],
-        maxAttempts = 10,
-        backoff = Backoff(delay = 300L, maxDelay = 1000L, multiplier = 1.3, random = true)
+        maxAttempts = 30,
+        backoff = Backoff(delay = 300L, maxDelay = 2000L, multiplier = 1.3, random = true)
     )
     fun requestToGithub(request: GitRepoInfoRequest): List<GitRepoMemberClientResponse> {
         return CompletableFuture.supplyAsync({
@@ -41,8 +41,6 @@ class GitRepoMemberClient(
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .body(object : ParameterizedTypeReference<List<GitRepoMemberClientResponse>>() {})
-
-            logger.info("Received GitHub OpenAPI Response")
 
             validateResponse(response) ?: throw OpenApiException.gitRepoMemberClient()
         }, virtualThreadExecutorService).get()
