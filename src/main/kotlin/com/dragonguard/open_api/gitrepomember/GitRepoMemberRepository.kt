@@ -29,8 +29,8 @@ class GitRepoMemberRepository(
             DO UPDATE SET 
                 commits = EXCLUDED.commits,
                 additions = EXCLUDED.additions,
-                deletions = EXCLUDED.deletions,
-        """.trimIndent()
+                deletions = EXCLUDED.deletions
+            """.trimIndent()
 
             val keyHolder = GeneratedKeyHolder()
 

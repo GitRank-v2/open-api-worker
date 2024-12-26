@@ -14,7 +14,7 @@ class GitRepoService(
 
         val gitRepoMembers = response.map {
             GitRepoMember(
-                gitRepoId = request.gitRepoId,
+                gitRepoId = request.gitRepoId!!,
                 commits = it.total!!,
                 additions = it.weeks?.sumOf { week -> week.a!! } ?: 0,
                 deletions = it.weeks?.sumOf { week -> week.d!! } ?: 0,

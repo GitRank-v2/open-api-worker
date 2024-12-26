@@ -55,7 +55,6 @@ class GitRepoMemberClient(
 
     private fun isResponseEmpty(response: List<GitRepoMemberClientResponse>?): Boolean =
         response.isNullOrEmpty() || response.any {
-            it.total == null || it.weeks.isNullOrEmpty() ||
-                    it.author?.login == null || it.author.avatarUrl == null
+            it.total == null || it.author?.login == null || it.author.avatarUrl == null
         }
 }
