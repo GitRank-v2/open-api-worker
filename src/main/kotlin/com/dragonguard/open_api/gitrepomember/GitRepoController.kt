@@ -1,6 +1,6 @@
 package com.dragonguard.open_api.gitrepomember
 
-import com.dragonguard.open_api.gitrepomember.dto.GitRepoInfoRequest
+import com.dragonguard.open_api.gitrepomember.dto.GitRepoRequest
 import com.dragonguard.open_api.gitrepomember.dto.GitRepoResponse
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
@@ -16,6 +16,6 @@ class GitRepoController(
 ) {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping
-    fun getRepoInfo(@RequestBody request: GitRepoInfoRequest): GitRepoResponse =
+    fun getRepoInfo(@RequestBody request: GitRepoRequest): GitRepoResponse =
         gitRepoService.getRepoInfo(request)
 }

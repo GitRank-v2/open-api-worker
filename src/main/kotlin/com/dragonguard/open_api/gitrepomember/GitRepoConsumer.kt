@@ -1,6 +1,6 @@
 package com.dragonguard.open_api.gitrepomember
 
-import com.dragonguard.open_api.gitrepomember.dto.GitRepoInfoRequest
+import com.dragonguard.open_api.gitrepomember.dto.GitRepoClientRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
@@ -34,7 +34,7 @@ class GitRepoConsumer(
             if (jsonStartIndex != -1) {
                 payload = payload.substring(jsonStartIndex)
             }
-            val request = objectMapper.readValue(payload, GitRepoInfoRequest::class.java)
+            val request = objectMapper.readValue(payload, GitRepoClientRequest::class.java)
 
             gitRepoService.getRepoInfo(request)
         } catch (e: Exception) {

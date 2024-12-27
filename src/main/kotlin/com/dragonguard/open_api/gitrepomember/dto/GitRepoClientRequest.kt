@@ -2,7 +2,7 @@ package com.dragonguard.open_api.gitrepomember.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-data class GitRepoInfoRequest(
+data class GitRepoClientRequest(
     @JsonProperty("git_repo_id")
     val gitRepoId: Long?,
     @JsonProperty("member_id")

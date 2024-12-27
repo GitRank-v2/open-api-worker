@@ -1,6 +1,6 @@
 package com.dragonguard.open_api.gitrepomember
 
-import com.dragonguard.open_api.gitrepomember.dto.GitRepoInfoRequest
+import com.dragonguard.open_api.gitrepomember.dto.GitRepoClientRequest
 import com.dragonguard.open_api.gitrepomember.dto.GitRepoMemberClientResponse
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -36,7 +36,7 @@ class GitRepoMemberClient(
         maxAttempts = 30,
         backoff = Backoff(delay = 300L, maxDelay = 2000L, multiplier = 1.3, random = true)
     )
-    fun requestToGithub(request: GitRepoInfoRequest): List<GitRepoMemberClientResponse> {
+    fun requestToGithub(request: GitRepoClientRequest): List<GitRepoMemberClientResponse> {
         return CompletableFuture.supplyAsync({
             val uri = String.format(PATH_FORMAT, request.name)
             logger.info("Request to GitHub: {}", uri)
